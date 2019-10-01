@@ -389,12 +389,6 @@ static NSString *const _SignatureStepIdentifier = @"signatureStep";
             ORKStrongTypeOf(weakSelf) strongSelf = weakSelf;
             [strongSelf updateBackButton];
             
-            //register ScrollView to update hairline
-            if ([viewController isKindOfClass:[ORKConsentReviewController class]]) {
-                ORKConsentReviewController *reviewViewController =  (ORKConsentReviewController *)viewController;
-                [strongSelf.taskViewController setRegisteredScrollView:reviewViewController.webView.scrollView];
-            }
-            
             UIAccessibilityPostNotification(UIAccessibilityScreenChangedNotification, nil);
         }
     }];

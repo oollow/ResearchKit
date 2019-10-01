@@ -41,7 +41,7 @@
 
 
 static const CGFloat iPadStepTitleLabelFontSize = 50.0;
-@interface ORKConsentReviewController () <UIWebViewDelegate, UIScrollViewDelegate>
+@interface ORKConsentReviewController () <UIScrollViewDelegate>
 
 @end
 
@@ -89,25 +89,12 @@ static const CGFloat iPadStepTitleLabelFontSize = 50.0;
         [self.navigationController.navigationBar setBarTintColor:self.view.backgroundColor];
     }
     
-    _webView = [UIWebView new];
-    [_webView loadHTMLString:_htmlString baseURL:ORKCreateRandomBaseURL()];
-    _webView.backgroundColor = ORKColor(ORKConsentBackgroundColorKey);
-    _webView.scrollView.backgroundColor = ORKColor(ORKConsentBackgroundColorKey);
-    if (!_agreeButton.isEnabled) {
-        _webView.scrollView.delegate = self;
-    }
-    _webView.delegate = self;
-    [_webView setClipsToBounds:YES];
-    _webView.translatesAutoresizingMaskIntoConstraints = NO;
     _toolbar.translatesAutoresizingMaskIntoConstraints = NO;
     _toolbar.translucent = YES;
 
-    _webView.clipsToBounds = NO;
-    _webView.scrollView.clipsToBounds = NO;
     [self updateLayoutMargins];
 
     [self setupiPadStepTitleLabel];
-    [self.view addSubview:_webView];
     [self.view addSubview:_toolbar];
     
     [self setUpStaticConstraints];
@@ -134,7 +121,6 @@ static const CGFloat iPadStepTitleLabelFontSize = 50.0;
 
 - (void)updateLayoutMargins {
     const CGFloat margin = ORKStandardHorizontalMarginForView(self.view);
-    _webView.scrollView.scrollIndicatorInsets = (UIEdgeInsets){.left = -margin, .right = -margin};
 }
     
 - (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
@@ -143,48 +129,9 @@ static const CGFloat iPadStepTitleLabelFontSize = 50.0;
 }
 
 - (void)setUpStaticConstraints {
-    NSMutableArray *constraints = [NSMutableArray new];
-    
-    NSDictionary *views = NSDictionaryOfVariableBindings(_webView, _toolbar, _iPadStepTitleLabel);
-    [constraints addObjectsFromArray:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|[_toolbar]|"
-                                                                             options:(NSLayoutFormatOptions)0
-                                                                             metrics:nil
-                                                                               views:views]];
-    [constraints addObjectsFromArray:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|-[_iPadStepTitleLabel]-[_webView][_toolbar]-|"
-                                                                             options:(NSLayoutFormatOptions)0
-                                                                             metrics:nil
-                                                                               views:views]];
-    
-    [constraints addObject:[NSLayoutConstraint constraintWithItem:_toolbar
-                                                        attribute:NSLayoutAttributeHeight
-                                                        relatedBy:NSLayoutRelationEqual
-                                                           toItem:nil
-                                                        attribute:NSLayoutAttributeNotAnAttribute
-                                                       multiplier:1.0
-                                                         constant:ORKGetMetricForWindow(ORKScreenMetricToolbarHeight, self.view.window)]];
-    
-    [NSLayoutConstraint activateConstraints:constraints];
 }
 
 - (void)updateViewConstraints {
-    [super updateViewConstraints];
-    if (!_variableConstraints) {
-        _variableConstraints = [NSMutableArray new];
-    }
-    [NSLayoutConstraint deactivateConstraints:_variableConstraints];
-    [_variableConstraints removeAllObjects];
-    
-    NSDictionary *views = NSDictionaryOfVariableBindings(_webView, _toolbar, _iPadStepTitleLabel);
-    const CGFloat horizontalMargin = ORKNeedWideScreenDesign(self.view) ? ORKiPadBackgroundViewLeftRightPadding : ORKStandardHorizontalMarginForView(self.view);
-    [_variableConstraints addObjectsFromArray:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|-horizMargin-[_webView]-horizMargin-|"
-                                                                      options:(NSLayoutFormatOptions)0
-                                                                                      metrics:@{ @"horizMargin": @(horizontalMargin) }
-                                                                        views:views]];
-    [_variableConstraints addObjectsFromArray:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|-horizMargin-[_iPadStepTitleLabel]-horizMargin-|"
-                                                                                      options:(NSLayoutFormatOptions)0
-                                                                                      metrics:@{ @"horizMargin": @(horizontalMargin) }
-                                                                                        views:views]];
-    [NSLayoutConstraint activateConstraints:_variableConstraints];
 }
 
 - (IBAction)cancel {
@@ -213,23 +160,6 @@ static const CGFloat iPadStepTitleLabelFontSize = 50.0;
     }]];
     
     [self presentViewController:alert animated:YES completion:nil];
-}
-
-- (BOOL)webView:(UIWebView *)webView shouldStartLoadWithRequest:(NSURLRequest *)request navigationType:(UIWebViewNavigationType)navigationType {
-    if (navigationType != UIWebViewNavigationTypeOther) {
-        [[UIApplication sharedApplication] openURL:request.URL];
-        return NO;
-    }
-    return YES;
-}
-
-- (void)webViewDidFinishLoad:(UIWebView *)webView {
-    //need a delay here because of a race condition where the webview may not have fully rendered by the time this is called in which case scrolledToBottom returns YES because everything == 0
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        if (!_agreeButton.isEnabled && [self scrolledToBottom:_webView.scrollView]) {
-            [_agreeButton setEnabled:YES];
-        }
-    });
 }
 
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {

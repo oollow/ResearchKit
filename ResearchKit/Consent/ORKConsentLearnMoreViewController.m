@@ -37,9 +37,8 @@
 #import "ORKSkin.h"
 
 
-@interface ORKConsentLearnMoreViewController () <UIWebViewDelegate>
+@interface ORKConsentLearnMoreViewController ()
 
-@property (nonatomic, strong) UIWebView *webView;
 @property (nonatomic, copy) NSString *content;
 @property (nonatomic, copy) NSURL *contentURL;
 
@@ -70,61 +69,18 @@
     
     self.view.backgroundColor = ORKColor(ORKBackgroundColorKey);
     
-    _webView = [[UIWebView alloc] initWithFrame:self.view.bounds];
-    
     const CGFloat horizMargin = ORKStandardLeftMarginForTableViewCell(self.view);
-    _webView.backgroundColor = ORKColor(ORKBackgroundColorKey);
-    _webView.scrollView.backgroundColor = ORKColor(ORKBackgroundColorKey);
     
-    _webView.clipsToBounds = NO;
-    _webView.scrollView.clipsToBounds = NO;
-    _webView.scrollView.scrollIndicatorInsets = (UIEdgeInsets){.left = -horizMargin, .right = -horizMargin};
-    _webView.opaque = NO; // If opaque is set to YES, _webView shows a black right margin during transition when modally presented. This is an artifact due to disabling clipsToBounds to be able to show the scroll indicator outside the view.
-    
-    if (_contentURL) {
-        [_webView setScalesPageToFit:YES];
-        
-        [_webView loadRequest:[NSURLRequest requestWithURL:_contentURL]];
-    } else {
-        [_webView loadHTMLString:self.content baseURL:ORKCreateRandomBaseURL()];
-    }
-    
-    _webView.delegate = self;
-    [self.view addSubview:_webView];
-    
-    _webView.translatesAutoresizingMaskIntoConstraints = NO;
     [self setUpConstraints];
     
     self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(done:)];
 }
 
 - (void)setUpConstraints {
-    NSMutableArray *constraints = [NSMutableArray new];
-    
-    NSDictionary *views = NSDictionaryOfVariableBindings(_webView);
-    const CGFloat horizMargin = ORKStandardLeftMarginForTableViewCell(self.view);
-    [constraints addObjectsFromArray:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|-horizMargin-[_webView]-horizMargin-|"
-                                                                             options:(NSLayoutFormatOptions)0
-                                                                             metrics:@{ @"horizMargin": @(horizMargin) }
-                                                                               views:views]];
-    [constraints addObjectsFromArray:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|[_webView]|"
-                                                                             options:(NSLayoutFormatOptions)0
-                                                                             metrics:nil
-                                                                               views:views]];
-    
-    [NSLayoutConstraint activateConstraints:constraints];
 }
 
 - (IBAction)done:(id)sender {
     [self.presentingViewController dismissViewControllerAnimated:YES completion:nil];
-}
-
-- (BOOL)webView:(UIWebView *)webView shouldStartLoadWithRequest:(NSURLRequest *)request navigationType:(UIWebViewNavigationType)navigationType {
-    if (navigationType != UIWebViewNavigationTypeOther) {
-        [[UIApplication sharedApplication] openURL:request.URL];
-        return NO;
-    }
-    return YES;
 }
 
 @end
